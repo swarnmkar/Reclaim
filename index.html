@@ -367,7 +367,13 @@ function currentSession(){
 function getLogs(sess){if(sess.program){state.progLogs=state.progLogs||{};state.progLogs[sess.pid]=state.progLogs[sess.pid]||{};return state.progLogs[sess.pid];}sess.logs=sess.logs||{};return sess.logs;}
 function isTicked(sess,ti){if(sess.program)return!!progDone[sess.pid+'-'+ti];return!!(sess.done&&sess.done[ti]);}
 function toggleTicked(sess,ti){if(sess.program){var k=sess.pid+'-'+ti;progDone[k]=!progDone[k];if(!progDone[k])delete progDone[k];sSet('progDone',progDone);}else{sess.done=sess.done||{};sess.done[ti]=!sess.done[ti];if(!sess.done[ti])delete sess.done[ti];sSet('state',state);}}
-function exDone(sess,ti){var lg=getLogs(sess)[ti];return isTicked(sess,ti)||(lg&&lg.length>0);}
+function exDone(sess,ti){
+  if(isTicked(sess,ti))return true;
+  var lg=getLogs(sess)[ti];
+  if(!lg||!lg.length)return false;
+  // all sets must be individually ticked done
+  return lg.every(function(s){return s.done;});
+}
 function persistSession(){sSet('state',state);}
 
 function exBest(name){var arr=exLog[name.toLowerCase()]||[],br=0,bw=0;arr.forEach(function(e){e.sets.forEach(function(s){if(s.r>br)br=s.r;if(s.w>bw)bw=s.w;});});return{r:br,w:bw};}
