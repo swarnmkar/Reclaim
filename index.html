@@ -442,7 +442,24 @@ function exCard(sess,ti,t){
   wrap.innerHTML='<div class="exhead"><div class="cbx">'+CHK+'</div><div style="flex:1"><div class="tt">'+esc(t.tt)+'<span class="prb" style="display:none">PR</span></div>'+(t.td?'<div class="td">'+esc(t.td)+'</div>':'')+(lt?'<div class="last">Last: '+esc(lt)+'</div>':'')+'</div><div class="infobtn" title="Technique guide">ℹ</div><div class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="sets"></div>';
   var head=wrap.querySelector('.exhead'),cbx=wrap.querySelector('.cbx');
   head.onclick=function(e){if(e.target.closest('.cbx')||e.target.closest('.infobtn'))return;wrap.classList.toggle('open');};
-  cbx.onclick=function(e){e.stopPropagation();toggleTicked(sess,ti);wrap.classList.toggle('done',exDone(sess,ti));recountRing(sess);};
+  cbx.onclick=function(e){
+    e.stopPropagation();
+    var wasTicked=isTicked(sess,ti);
+    toggleTicked(sess,ti);
+    if(wasTicked){
+      /* User explicitly unticked — clear individual set done flags */
+      var lg=getLogs(sess)[ti];
+      if(lg)lg.forEach(function(s){s.done=false;});
+      persistSession();
+      wrap.querySelectorAll('.setrow').forEach(function(r){
+        r.classList.remove('done');
+        var sd=r.querySelector('.stdone');
+        if(sd)sd.classList.remove('on');
+      });
+    }
+    wrap.classList.toggle('done',exDone(sess,ti));
+    recountRing(sess);
+  };
   wrap.querySelector('.infobtn').onclick=function(e){e.stopPropagation();openGuide(t.tt);};
   buildSets(sess,ti,wrap);
   return wrap;

@@ -1,6 +1,7 @@
-/* Reclaim — Service Worker
-   Caches the app for offline use on your phone */
-const CACHE_VERSION = 'reclaim-v1';
+/* Reclaim — Service Worker v2
+   Network-first: always fetches latest code when online,
+   falls back to cache when offline */
+const CACHE_VERSION = 'reclaim-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -30,12 +31,22 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
+/* Network-first: get latest code when online, use cache when offline */
 self.addEventListener('fetch', function(e) {
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).catch(function() {
-        return caches.match('./index.html');
-      });
-    })
+    fetch(e.request)
+      .then(function(response) {
+        /* Update cache with fresh response */
+        var clone = response.clone();
+        caches.open(CACHE_VERSION).then(function(cache) {
+          cache.put(e.request, clone);
+        });
+        return response;
+      })
+      .catch(function() {
+        /* Offline fallback */
+        return caches.match(e.request)
+          .then(function(cached) { return cached || caches.match('./index.html'); });
+      })
   );
 });
